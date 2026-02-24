@@ -108,7 +108,14 @@ def setup_model():
         st.error("GEMINI_API_KEY not configured.")
         st.stop()
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-1.5-flash')
+    try:
+        models = [m.name for m in genai.list_models()
+                  if 'generateContent' in m.supported_generation_methods]
+        flash = [m for m in models if 'flash' in m.lower()]
+        model_name = flash[0] if flash else models[0]
+    except Exception:
+        model_name = 'models/gemini-1.5-flash'
+    return genai.GenerativeModel(model_name, system_instruction=SYSTEM_PROMPT)
 
 
 if "messages" not in st.session_state:
@@ -130,10 +137,15 @@ if prompt := st.chat_input("Say something to Troy..."):
     with st.chat_message("assistant", avatar="🎬"):
         with st.spinner("Troy is checking his cue cards..."):
             try:
-                full_prompt = SYSTEM_PROMPT + "\n\nUser: " + prompt
-                response = st.session_state.chat.send_message(full_prompt)
+                response = st.session_state.chat.send_message(prompt)
                 reply = response.text
-            except Exception as e:
-                reply = f"[DEBUG] Error: {e}"
+            except Exception:
+                reply = (
+                    "Hi, I'm Troy McClure! You may remember me from such "
+                    "technical difficulties as \"The Server That Couldn't\" "
+                    "and \"Error 500: A Love Story.\" I seem to have "
+                    "forgotten my line. The teleprompter is broken again, "
+                    "just like my third marriage."
+                )
         st.write(reply)
     st.session_state.messages.append({"role": "assistant", "content": reply})
