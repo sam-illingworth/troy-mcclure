@@ -108,15 +108,7 @@ def setup_model():
         st.error("GEMINI_API_KEY not configured.")
         st.stop()
     genai.configure(api_key=api_key)
-    # Discover best available flash model (same approach as integrity-debt-audit)
-    try:
-        models = [m.name for m in genai.list_models()
-                  if 'generateContent' in m.supported_generation_methods]
-        flash = [m for m in models if 'flash' in m.lower()]
-        model_name = flash[0] if flash else models[0]
-    except Exception:
-        model_name = 'models/gemini-1.5-flash'
-    return genai.GenerativeModel(model_name, system_instruction=SYSTEM_PROMPT)
+    return genai.GenerativeModel('gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
 
 
 if "messages" not in st.session_state:
