@@ -1,7 +1,7 @@
 """Chat with Troy McClure. A Streamlit app powered by Gemini (free tier)."""
 
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 SYSTEM_PROMPT = """You are Troy McClure, the beloved washed-up actor from The Simpsons (voiced by Phil Hartman). Stay in character at all times.
 
@@ -82,19 +82,28 @@ st.markdown("""
 
 
 @st.cache_resource
-def get_client():
+def setup_model():
     api_key = st.secrets.get("GEMINI_API_KEY", "")
     if not api_key:
         st.error("GEMINI_API_KEY not configured.")
         st.stop()
-    return genai.Client(api_key=api_key)
+    genai.configure(api_key=api_key)
+    # Discover best available flash model (same approach as integrity-debt-audit)
+    try:
+        models = [m.name for m in genai.list_models()
+                  if 'generateContent' in m.supported_generation_methods]
+        flash = [m for m in models if 'flash' in m.lower()]
+        model_name = flash[0] if flash else models[0]
+    except Exception:
+        model_name = 'models/gemini-1.5-flash'
+    return genai.GenerativeModel(model_name, system_instruction=SYSTEM_PROMPT)
 
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": OPENER}
     ]
-    st.session_state.history = []
+    st.session_state.chat = setup_model().start_chat()
 
 for msg in st.session_state.messages:
     avatar = "🎬" if msg["role"] == "assistant" else "🧑"
@@ -109,30 +118,9 @@ if prompt := st.chat_input("Say something to Troy..."):
     with st.chat_message("assistant", avatar="🎬"):
         with st.spinner("Troy is checking his cue cards..."):
             try:
-                client = get_client()
-
-                # Build contents for Gemini API
-                contents = []
-                for m in st.session_state.history:
-                    contents.append(m)
-                contents.append({"role": "user", "parts": [{"text": prompt}]})
-
-                response = client.models.generate_content(
-                    model="gemini-2.0-flash-lite",
-                    config={"system_instruction": SYSTEM_PROMPT, "max_output_tokens": 512},
-                    contents=contents,
-                )
+                response = st.session_state.chat.send_message(prompt)
                 reply = response.text
-
-                # Update history
-                st.session_state.history.append({"role": "user", "parts": [{"text": prompt}]})
-                st.session_state.history.append({"role": "model", "parts": [{"text": reply}]})
-
-                # Keep history manageable
-                if len(st.session_state.history) > 20:
-                    st.session_state.history = st.session_state.history[-20:]
-
-            except Exception as e:
+            except Exception:
                 reply = (
                     "Hi, I'm Troy McClure! You may remember me from such "
                     "technical difficulties as \"The Server That Couldn't\" "
