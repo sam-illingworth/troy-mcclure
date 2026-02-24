@@ -38,23 +38,38 @@ st.markdown("""
         background-color: #FED41D;
     }
     .stApp header {
-        background-color: #FED41D;
+        background-color: transparent;
     }
     .block-container {
-        padding-top: 1rem;
+        padding-top: 2rem;
         max-width: 700px;
     }
-    div[data-testid="stChatMessage"] {
-        background-color: white;
-        border-radius: 16px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    /* Hide Streamlit top bar so it does not cover content */
+    header[data-testid="stHeader"] {
+        background-color: #FED41D !important;
+        height: 0px !important;
+        min-height: 0px !important;
     }
+    /* Chat message bubbles */
+    div[data-testid="stChatMessage"] {
+        background-color: white !important;
+        border: none !important;
+        border-radius: 16px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
+        padding: 16px !important;
+    }
+    /* Remove any default borders on inner elements */
+    div[data-testid="stChatMessage"] > div {
+        border: none !important;
+    }
+    /* Title block */
     .title-block {
         background: #2056a8;
         color: white;
-        padding: 28px 24px 22px 24px;
+        padding: 30px 24px 24px 24px;
         border-radius: 12px;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
+        margin-top: 10px;
         text-align: center;
     }
     .title-block h1 {
@@ -69,6 +84,11 @@ st.markdown("""
         font-style: italic;
         margin: 8px 0 0 0;
         font-size: 0.9em;
+    }
+    /* Chat input bar */
+    div[data-testid="stChatInput"] {
+        background-color: #FED41D !important;
+        border-top: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
